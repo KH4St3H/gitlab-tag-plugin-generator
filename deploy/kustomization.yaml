@@ -1,0 +1,12 @@
+# Deploy straight from GitHub:
+#   kubectl apply -k "https://github.com/KH4St3H/gitlab-tag-plugin-generator//deploy?ref=main"
+#
+# secret.yaml is intentionally not included — it holds example values.
+# Create the gitlab-tag-plugin-secret yourself (see secret.yaml for the
+# expected keys) before or right after applying.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+resources:
+  - deployment.yaml
+  - plugin-configmap.yaml

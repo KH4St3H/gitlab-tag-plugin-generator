@@ -109,24 +109,39 @@ curl -s http://localhost:8080/api/v1/getparams.execute \
 
 Run tests with `go test ./...`.
 
-## Build & deploy
+## Deploy
 
-```sh
-docker build -t registry.example.com/gitlab-tag-plugin-generator:latest .
-docker push registry.example.com/gitlab-tag-plugin-generator:latest
-```
+Prebuilt images are published to
+[`ghcr.io/kh4st3h/gitlab-tag-plugin-generator`](https://github.com/KH4St3H/gitlab-tag-plugin-generator/pkgs/container/gitlab-tag-plugin-generator)
+by GitHub Actions on every push to `main` and on `v*` tags.
 
-1. Edit `deploy/secret.yaml` with a random `plugin.token` and your GitLab
-   token (or manage the secret with your usual secret tooling), then apply:
+1. Create the token secret — a random `plugin.token` and your GitLab token
+   (see [`deploy/secret.yaml`](deploy/secret.yaml) for details, or manage it
+   with your usual secret tooling):
 
    ```sh
-   kubectl apply -f deploy/secret.yaml
-   kubectl apply -f deploy/plugin-configmap.yaml
-   kubectl apply -f deploy/deployment.yaml   # set the image first
+   kubectl -n argocd create secret generic gitlab-tag-plugin-secret \
+     --from-literal=plugin.token="$(openssl rand -hex 32)" \
+     --from-literal=gitlab.token="<your-gitlab-token>"
+   kubectl -n argocd label secret gitlab-tag-plugin-secret app.kubernetes.io/part-of=argocd
    ```
 
-2. Reference the plugin from an ApplicationSet — see
+2. Apply the manifests straight from GitHub:
+
+   ```sh
+   kubectl apply -k "https://github.com/KH4St3H/gitlab-tag-plugin-generator//deploy?ref=main"
+   ```
+
+   (or clone the repo and `kubectl apply -k deploy/`)
+
+3. Reference the plugin from an ApplicationSet — see
    [`examples/applicationset.yaml`](examples/applicationset.yaml).
+
+To build the image yourself instead:
+
+```sh
+docker build -t ghcr.io/kh4st3h/gitlab-tag-plugin-generator:latest .
+```
 
 Notes:
 

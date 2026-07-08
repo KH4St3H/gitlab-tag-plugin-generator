@@ -15,11 +15,9 @@ spec:
       labels:
         app.kubernetes.io/name: gitlab-tag-plugin
     spec:
-      imagePullSecrets:
-      - name: regcred
       containers:
         - name: gitlab-tag-plugin
-          image: registry.example.com/argocd-gitlab-tag-plugin:latest
+          image: ghcr.io/kh4st3h/gitlab-tag-plugin-generator:latest
           ports:
             - name: http
               containerPort: 8080
