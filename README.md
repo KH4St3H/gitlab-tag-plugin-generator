@@ -4,24 +4,8 @@ An [ArgoCD ApplicationSet plugin generator](https://argo-cd.readthedocs.io/en/st
 that filters a list of GitLab projects by whether a given tag exists in each
 repository. Only projects that have the tag produce an Application.
 
-Typical use case: deploy only the services that have been tagged for an
-environment (e.g. only projects with a `production` tag get a production app).
-
-## How it works
-
-```
-ApplicationSet controller ──POST /api/v1/getparams.execute──▶ this service
-                                                                   │
-                                                     GET /projects/:id/repository/tags/:tag
-                                                                   ▼
-                                                                GitLab
-```
-
-For each project in the input, the service calls the GitLab tags API. Projects
-where the tag exists (HTTP 200) are emitted; projects where the tag or the
-project itself is missing (HTTP 404) are skipped. Any other GitLab error fails
-the whole request with HTTP 500 so the controller keeps the previous state
-instead of pruning apps for projects that merely failed to be checked.
+## Use cases
+The most common use case for this plugin is when you are using SCM generator to generate applications from a Gitlab repositories and you want to pin the resources to an specific tag in that repository(see [Tag Tracking](https://argo-cd.readthedocs.io/en/latest/user-guide/tracking_strategies/#tag-tracking)). The problem arises when you create a new project and the you create the infra project of you application earlier and don't wnat to deploy the project yet. This plugin allows you to filter repositories by that specific tag so their corresponding project won't get created unless that tag exist.
 
 ### Input parameters
 
@@ -89,25 +73,6 @@ contributes and the `sha` key collision to be aware of.
 | `CONCURRENCY`             | no       | `10`                 | Max parallel GitLab requests                       |
 | `REQUEST_TIMEOUT_SECONDS` | no       | `30`                 | Per-request GitLab timeout                         |
 
-## Local development
-
-```sh
-export PLUGIN_TOKEN=dev-token GITLAB_TOKEN=glpat-...
-go run .
-
-curl -s http://localhost:8080/api/v1/getparams.execute \
-  -H "Authorization: Bearer dev-token" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "applicationSetName": "test",
-        "input": {"parameters": {
-          "tag": "v1.0.0",
-          "projects": ["gitlab-org/gitlab-runner", "gitlab-org/does-not-exist"]
-        }}
-      }' | jq
-```
-
-Run tests with `go test ./...`.
 
 ## Deploy
 
@@ -140,7 +105,7 @@ by GitHub Actions on every push to `main` and on `v*` tags.
 To build the image yourself instead:
 
 ```sh
-docker build -t ghcr.io/kh4st3h/gitlab-tag-plugin-generator:latest .
+docker build -t registry.example.com/gitlab-tag-plugin-generator:latest .
 ```
 
 Notes:
