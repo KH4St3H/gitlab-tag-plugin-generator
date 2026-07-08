@@ -1,0 +1,74 @@
+# Matrix generator: GitLab SCM Provider × gitlab-tag-plugin.
+#
+# 1. The SCM Provider generator discovers every project in a GitLab group
+#    (including subgroups) and emits one parameter set per repository.
+# 2. The matrix generator then calls the plugin once per repository,
+#    interpolating "{{ .organization }}/{{ .repository }}" into `projects`.
+#    If the tag exists the plugin returns one parameter set and the repo
+#    produces an Application; if not, it returns an empty list and the repo
+#    is filtered out.
+#
+# Available template fields (merged by the matrix):
+#   from scmProvider: organization, repository, url, branch, branchNormalized,
+#                     sha, short_sha, short_sha_7, labels
+#   from the plugin:  project, name, tag, sha, shortSha
+#
+# NOTE: both generators emit `sha`. The plugin runs second in the matrix, so
+# its `sha` (the commit the tag points to) wins over the SCM provider's
+# (the branch head). Use `short_sha` if you need the branch head instead.
+#
+# The referenced `gitlab-token` secret must live in the argocd namespace and
+# carry the `app.kubernetes.io/part-of: argocd` label so the ApplicationSet
+# controller is allowed to read it. It can be the same secret the plugin
+# deployment uses for GITLAB_TOKEN.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tagged-apps-scm
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - scmProvider:
+              gitlab:
+                api: https://git.oceantim.com
+                group: platform            # group to scan
+                includeSubgroups: true
+                allBranches: false         # default branch only
+                tokenRef:
+                  secretName: gitlab-token
+                  key: token
+              cloneProtocol: https
+              filters:
+                - repositoryMatch: ".*"    # optionally narrow by name here
+          - plugin:
+              configMapRef:
+                name: gitlab-tag-plugin
+              input:
+                parameters:
+                  tag: production
+                  projects: "{{ .organization }}/{{ .repository }}"
+              requeueAfterSeconds: 300
+  template:
+    metadata:
+      name: "{{ .name }}"
+      labels:
+        tag-sha: "{{ .shortSha }}"
+    spec:
+      project: default
+      source:
+        repoURL: "{{ .url }}"
+        targetRevision: "{{ .tag }}"
+        path: deploy
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .name }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

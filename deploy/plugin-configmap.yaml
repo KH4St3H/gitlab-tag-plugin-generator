@@ -1,0 +1,13 @@
+# Registers the plugin with the ApplicationSet controller. Referenced from
+# ApplicationSets via `generators[].plugin.configMapRef.name`.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-tag-plugin
+  namespace: argocd
+data:
+  baseUrl: http://gitlab-tag-plugin.argocd.svc.cluster.local
+  # "$<secret-name>:<key>" tells the controller to read the token from that
+  # secret in the argocd namespace.
+  token: "$gitlab-tag-plugin-secret:plugin.token"
+  requestTimeout: "60"

@@ -1,0 +1,3 @@
+gitlab-tag-plugin-generator
+*.env
+.env*

@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-tag-plugin
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: gitlab-tag-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gitlab-tag-plugin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gitlab-tag-plugin
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+        - name: gitlab-tag-plugin
+          image: registry.example.com/argocd-gitlab-tag-plugin:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: GITLAB_URL
+              value: https://gitlab.org # change to your self-hosted GitLab if needed
+            - name: GITLAB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-tag-plugin-secret
+                  key: gitlab.token
+            - name: PLUGIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-tag-plugin-secret
+                  key: plugin.token
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-tag-plugin
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: gitlab-tag-plugin
+spec:
+  selector:
+    app.kubernetes.io/name: gitlab-tag-plugin
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

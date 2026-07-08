@@ -1,0 +1,51 @@
+# Example ApplicationSet using the gitlab-tag-plugin generator.
+#
+# The plugin checks each project in `projects` for the tag `tag` and emits
+# one parameter set per project where the tag exists, with these values:
+#
+#   project  — full project path, e.g. "platform/payments"
+#   name     — last path segment, e.g. "payments"
+#   tag      — the tag name (as returned by GitLab)
+#   sha      — commit SHA the tag points to
+#   shortSha — abbreviated commit SHA
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tagged-apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - plugin:
+        configMapRef:
+          name: gitlab-tag-plugin
+        input:
+          parameters:
+            tag: "production"
+            projects:
+              - platform/payments
+              - platform/orders
+              - platform/notifications
+        # Re-evaluate every 5 minutes so newly tagged projects appear.
+        requeueAfterSeconds: 300
+  template:
+    metadata:
+      name: "{{ .name }}"
+      labels:
+        tag-sha: "{{ .shortSha }}"
+    spec:
+      project: default
+      source:
+        repoURL: "https://gitlab.com/{{ .project }}.git"
+        targetRevision: "{{ .tag }}"
+        path: deploy
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .name }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
