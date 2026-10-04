@@ -1,0 +1,14 @@
+apiVersion: v2
+name: gitlab-tag-plugin
+description: ArgoCD ApplicationSet plugin generator that filters GitLab projects by tag
+type: application
+# Overwritten by CI from the git tag on release.
+version: 0.1.0
+appVersion: "latest"
+home: https://github.com/KH4St3H/gitlab-tag-plugin-generator
+sources:
+  - https://github.com/KH4St3H/gitlab-tag-plugin-generator
+keywords:
+  - argocd
+  - applicationset
+  - gitlab

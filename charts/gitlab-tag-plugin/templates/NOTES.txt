@@ -1,0 +1,18 @@
+gitlab-tag-plugin is installed in namespace {{ .Release.Namespace }}.
+
+Reference it from an ApplicationSet with:
+
+  generators:
+    - plugin:
+        configMapRef:
+          name: {{ include "gitlab-tag-plugin.fullname" . }}
+        input:
+          parameters:
+            tag: production
+            projects: ["group/project"]
+{{- if ne .Release.Namespace "argocd" }}
+
+WARNING: the plugin ConfigMap and secret must be in the namespace the
+ApplicationSet controller runs in. You installed into "{{ .Release.Namespace }}";
+make sure that is your ArgoCD namespace.
+{{- end }}

@@ -1,0 +1,80 @@
+# Install into the namespace ArgoCD runs in (usually `argocd`): the plugin
+# ConfigMap and token secret must live there for the ApplicationSet
+# controller to find them.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/kh4st3h/gitlab-tag-plugin-generator
+  # Defaults to the chart's appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+gitlab:
+  # Base URL of your GitLab instance.
+  url: https://gitlab.com
+
+config:
+  # Max parallel GitLab requests.
+  concurrency: 10
+  # Per-request GitLab timeout in seconds.
+  requestTimeoutSeconds: 30
+
+secret:
+  # Create the token secret from the values below. Set to false and point
+  # existingSecret at your own secret to manage it elsewhere (SealedSecrets,
+  # ExternalSecrets, ...).
+  create: true
+  # Name of an existing secret holding the keys below. Must carry the
+  # `app.kubernetes.io/part-of: argocd` label so the controller can read it.
+  existingSecret: ""
+  # GitLab token with `read_api` / `read_repository` scope. Required when
+  # secret.create is true.
+  gitlabToken: ""
+  # Shared token the ApplicationSet controller uses to call the plugin.
+  # Left empty, a random one is generated and kept across `helm upgrade`.
+  # Set it explicitly when the chart is rendered with `helm template` (e.g.
+  # installed by ArgoCD itself), otherwise it changes on every render.
+  pluginToken: ""
+  gitlabTokenKey: gitlab.token
+  pluginTokenKey: plugin.token
+
+# The ConfigMap ApplicationSets reference via
+# `generators[].plugin.configMapRef.name` (named after the release fullname).
+pluginConfigMap:
+  create: true
+  # Seconds the controller waits for the plugin to respond.
+  requestTimeout: 60
+
+service:
+  type: ClusterIP
+  port: 80
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    memory: 64Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

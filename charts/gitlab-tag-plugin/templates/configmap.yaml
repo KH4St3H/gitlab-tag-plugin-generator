@@ -1,0 +1,14 @@
+{{- if .Values.pluginConfigMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gitlab-tag-plugin.fullname" . }}
+  labels:
+    {{- include "gitlab-tag-plugin.labels" . | nindent 4 }}
+data:
+  baseUrl: {{ printf "http://%s.%s.svc.cluster.local:%v" (include "gitlab-tag-plugin.fullname" .) .Release.Namespace .Values.service.port | quote }}
+  # "$<secret-name>:<key>" tells the controller to read the token from that
+  # secret in its own namespace.
+  token: {{ printf "$%s:%s" (include "gitlab-tag-plugin.secretName" .) .Values.secret.pluginTokenKey | quote }}
+  requestTimeout: {{ .Values.pluginConfigMap.requestTimeout | quote }}
+{{- end }}

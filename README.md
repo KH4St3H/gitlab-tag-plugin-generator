@@ -80,6 +80,26 @@ Prebuilt images are published to
 [`ghcr.io/kh4st3h/gitlab-tag-plugin-generator`](https://github.com/KH4St3H/gitlab-tag-plugin-generator/pkgs/container/gitlab-tag-plugin-generator)
 by GitHub Actions on every push to `main` and on `v*` tags.
 
+### With Helm
+
+The chart is published to GHCR as an OCI artifact on every `v*` tag (chart
+version = image version = tag without the `v`):
+
+```sh
+helm install gitlab-tag-plugin oci://ghcr.io/kh4st3h/charts/gitlab-tag-plugin \
+  --namespace argocd \
+  --set gitlab.url=https://gitlab.example.com \
+  --set secret.gitlabToken="<your-gitlab-token>"
+```
+
+Install it into the ArgoCD namespace. The release name becomes the ConfigMap
+name you reference in `configMapRef` (`gitlab-tag-plugin` above). To bring
+your own secret, set `secret.create=false` and `secret.existingSecret=<name>`.
+See [`charts/gitlab-tag-plugin/values.yaml`](charts/gitlab-tag-plugin/values.yaml)
+for all options.
+
+### With kustomize
+
 1. Create the token secret — a random `plugin.token` and your GitLab token
    (see [`deploy/secret.yaml`](deploy/secret.yaml) for details, or manage it
    with your usual secret tooling):
