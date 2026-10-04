@@ -59,6 +59,10 @@ podLabels: {}
 
 podSecurityContext:
   runAsNonRoot: true
+  # The distroless image's "nonroot" user. Must be numeric for the kubelet
+  # to verify runAsNonRoot.
+  runAsUser: 65532
+  runAsGroup: 65532
   seccompProfile:
     type: RuntimeDefault
 

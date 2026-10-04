@@ -7,5 +7,5 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/gitlab-tag-plugin-
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/gitlab-tag-plugin-generator /gitlab-tag-plugin-generator
 EXPOSE 8080
-USER nonroot
+USER 65532:65532
 ENTRYPOINT ["/gitlab-tag-plugin-generator"]
