@@ -78,3 +78,14 @@ resources:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+# Extra Kubernetes manifests to deploy alongside the chart (e.g. a
+# SealedSecret or ExternalSecret for the tokens). Each entry may be a YAML
+# object or a string; both are rendered through `tpl`, so templates like
+# {{ .Release.Namespace }} work.
+extraObjects: []
+# - apiVersion: external-secrets.io/v1beta1
+#   kind: ExternalSecret
+#   metadata:
+#     name: "{{ .Release.Name }}-secret"
+#   spec: ...
